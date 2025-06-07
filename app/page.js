@@ -23,7 +23,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-black text-white px-6 py-12">
-      <h1 className="text-4xl font-bold mb-10 text-center">Dysanum Tech Store</h1>
+      <h1 className="text-4xl font-bold mb-10 text-center">DysanumStore</h1>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
         {products.map(product => (
