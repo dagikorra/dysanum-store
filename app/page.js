@@ -7,6 +7,7 @@ export default function Home() {
   const [products, setProducts] = useState([])
   const [cart, setCart] = useState([])
 
+  // Fetch products from Sanity on load
   useEffect(() => {
     client.fetch(`*[_type == "product"]{
       _id,
@@ -14,7 +15,12 @@ export default function Home() {
       price,
       description,
       "imageUrl": image.asset->url
-    }`).then(setProducts)
+    }`).then(data => {
+      console.log("Sanity response:", data)
+      setProducts(data)
+    }).catch(err => {
+      console.error("Sanity fetch failed:", err.message || err)
+    })
   }, [])
 
   const addToCart = (product) => {
@@ -23,7 +29,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-black text-white px-6 py-12">
-      <h1 className="text-4xl font-bold mb-10 text-center">DysanumStore</h1>
+      <h1 className="text-4xl font-bold mb-10 text-center">Dysanum Store</h1>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
         {products.map(product => (
@@ -49,14 +55,40 @@ export default function Home() {
         {cart.length === 0 ? (
           <p className="text-zinc-400">Your cart is empty.</p>
         ) : (
-          <ul className="space-y-2">
-            {cart.map((item, idx) => (
-              <li key={idx} className="flex justify-between border-b border-zinc-700 pb-2">
-                <span>{item.name}</span>
-                <span>${item.price}</span>
-              </li>
-            ))}
-          </ul>
+          <>
+            <ul className="space-y-2 mb-6">
+              {cart.map((item, idx) => (
+                <li key={idx} className="flex justify-between border-b border-zinc-700 pb-2">
+                  <span>{item.name}</span>
+                  <span>${item.price}</span>
+                </li>
+              ))}
+            </ul>
+
+            <button
+              onClick={async () => {
+                try {
+                  const res = await fetch('/api/checkout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(cart),
+                  })
+                  const data = await res.json()
+                  if (data.url) {
+                    window.location.href = data.url
+                  } else {
+                    alert('No checkout URL returned.')
+                  }
+                } catch (error) {
+                  console.error('Checkout Error:', error)
+                  alert('Checkout failed. Please try again.')
+                }
+              }}
+              className="bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded"
+            >
+              Checkout
+            </button>
+          </>
         )}
       </div>
     </div>
