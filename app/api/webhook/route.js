@@ -3,7 +3,7 @@ import Stripe from 'stripe'
 
 export const config = {
   api: {
-    bodyParser: false, // 👈 Required for raw body
+    bodyParser: false,
   },
 }
 
@@ -22,7 +22,6 @@ export async function POST(req) {
   const sig = req.headers.get('stripe-signature')
 
   let event
-
   try {
     event = stripe.webhooks.constructEvent(
       rawBody,
@@ -34,13 +33,7 @@ export async function POST(req) {
     return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 })
   }
 
-  // ✅ Handle completed checkout
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object
-    console.log('✅ Payment confirmed:', session)
-
-    // TODO: Save to Sanity + Send email
-  }
+  console.log('✅ Webhook received and verified:', event.type)
 
   return NextResponse.json({ received: true })
 }
