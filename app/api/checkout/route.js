@@ -1,25 +1,17 @@
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
-import { buffer } from 'micro'
-import { client as sanityClient } from '@/lib/sanity'
 import { Resend } from 'resend'
-
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-}
+import { client as sanityClient } from '@/lib/sanity'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function POST(req) {
-  console.log('📦 Stripe webhook received')
-
-  const rawBody = await buffer(req.body)
+  const rawBody = await req.text()
   const sig = req.headers.get('stripe-signature')
 
   let event
+
   try {
     event = stripe.webhooks.constructEvent(
       rawBody,
@@ -27,18 +19,20 @@ export async function POST(req) {
       process.env.STRIPE_WEBHOOK_SECRET
     )
   } catch (err) {
-    console.error('❌ Webhook Error:', err.message)
+    console.error('❌ Webhook signature verification failed:', err.message)
     return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 })
   }
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object
-    const customerEmail = session.customer_details?.email || session.customer_email || 'unknown@example.com'
+    const customerEmail = session.customer_details?.email || session.customer_email || 'unknown@dysanum.com'
 
+    // TEMP placeholder until dynamic items are passed from checkout
     const lineItems = [
-      { name: 'Placeholder Product', price: 10.0 }
+      { name: 'Placeholder Item', price: 10.0 }
     ]
 
+    // Save order in Sanity
     await sanityClient.create({
       _type: 'order',
       stripeSessionId: session.id,
@@ -47,6 +41,7 @@ export async function POST(req) {
       createdAt: new Date().toISOString(),
     })
 
+    // Email you
     await resend.emails.send({
       from: 'support@dysanum.com',
       to: process.env.ORDER_NOTIFY_EMAIL,
@@ -54,6 +49,7 @@ export async function POST(req) {
       html: `<strong>New order from ${customerEmail}</strong>`,
     })
 
+    // Email customer
     await resend.emails.send({
       from: 'support@dysanum.com',
       to: customerEmail,
