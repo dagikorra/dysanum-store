@@ -1,24 +1,26 @@
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-}
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: '2023-08-16',
+})
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
-
-async function buffer(readable) {
+// Helper: Read the raw body from ReadableStream
+async function getRawBody(readableStream) {
+  const reader = readableStream.getReader()
   const chunks = []
-  for await (const chunk of readable) {
-    chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk)
+
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    chunks.push(value)
   }
+
   return Buffer.concat(chunks)
 }
 
 export async function POST(req) {
-  const rawBody = await buffer(req.body)
+  const rawBody = await getRawBody(req.body)
   const sig = req.headers.get('stripe-signature')
 
   let event
@@ -33,7 +35,13 @@ export async function POST(req) {
     return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 })
   }
 
-  console.log('✅ Webhook received and verified:', event.type)
+  console.log('✅ Webhook verified:', event.type)
+
+  // Example: You can add logic here for session completion
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object
+    console.log('✅ Payment successful:', session)
+  }
 
   return NextResponse.json({ received: true })
 }
