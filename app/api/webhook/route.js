@@ -48,7 +48,7 @@ export async function POST(req) {
       from: process.env.FROM_EMAIL,
       to: 'support@dysanum.com',
       subject: '🛒 New Order Received',
-      html: `<p>New order placed by: <strong>${customerEmail}</strong></p>
+      html: `<p>New order from ${customerEmail}</p>
              <p>Stripe Session ID: ${session.id}</p>`,
     })
 
