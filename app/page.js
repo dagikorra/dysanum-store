@@ -66,28 +66,28 @@ export default function Home() {
             </ul>
 
             <button
-              onClick={async () => {
-                try {
-                  const res = await fetch('/api/checkout', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(cart),
-                  })
-                  const data = await res.json()
-                  if (data.url) {
-                    window.location.href = data.url
-                  } else {
-                    alert('No checkout URL returned.')
-                  }
-                } catch (error) {
-                  console.error('Checkout Error:', error)
-                  alert('Checkout failed. Please try again.')
-                }
-              }}
-              className="bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded"
-            >
-              Checkout
-            </button>
+  onClick={async () => {
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cart),
+      })
+      const data = await res.json()
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        alert('Checkout session failed. Please try again.')
+      }
+    } catch (error) {
+      console.error('Checkout error:', error)
+      alert('Something went wrong. Please try again.')
+    }
+  }}
+  className="bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded"
+>
+  Checkout
+</button>
           </>
         )}
       </div>

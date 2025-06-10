@@ -5,17 +5,14 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2023-08-16',
 })
 
-// Helper: Read the raw body from ReadableStream
-async function getRawBody(readableStream) {
-  const reader = readableStream.getReader()
+async function getRawBody(readable) {
+  const reader = readable.getReader()
   const chunks = []
-
   while (true) {
     const { done, value } = await reader.read()
     if (done) break
     chunks.push(value)
   }
-
   return Buffer.concat(chunks)
 }
 
@@ -36,12 +33,6 @@ export async function POST(req) {
   }
 
   console.log('✅ Webhook verified:', event.type)
-
-  // Example: You can add logic here for session completion
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object
-    console.log('✅ Payment successful:', session)
-  }
 
   return NextResponse.json({ received: true })
 }
